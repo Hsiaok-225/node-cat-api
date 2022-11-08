@@ -61,7 +61,7 @@ app.get("/api/breeds/ids", (req, res) => {
 });
 
 // login
-app.post("/login", async (req, res) => {
+app.post("/auth/login", async (req, res) => {
   try {
     // check user from db
     const user = await User.findOne({
@@ -84,7 +84,7 @@ app.post("/login", async (req, res) => {
 });
 
 // register
-app.post("/register", async (req, res) => {
+app.post("/auth/register", async (req, res) => {
   console.log(req.body);
   try {
     const salt = await bcrypt.genSalt(10);
@@ -98,8 +98,73 @@ app.post("/register", async (req, res) => {
     const user = await newUser.save();
     res.json(user);
   } catch (err) {
-    // write wrong logic here
     res.status(501).json(err);
+  }
+});
+
+// Create Favoriting Images
+app.post("/api/createFavorite", async (req, res) => {
+  try {
+    const data = JSON.stringify(req.body);
+    const config = {
+      method: "post",
+      url: "https://api.thecatapi.com/v1/favourites",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": process.env.THE_CAT_API,
+      },
+      data: data,
+    };
+
+    const response = await axios(config);
+    const newFavourite = response.data;
+    res.status(201).json(newFavourite);
+  } catch (err) {
+    res.status(501).json(err);
+  }
+});
+
+// Delete Favarite Images
+app.delete("/api/deleteFavorite", async (req, res) => {
+  try {
+    const { favouriteId } = req.query;
+    console.log(favouriteId);
+    const config = {
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": process.env.THE_CAT_API,
+      },
+    };
+    const response = await axios.delete(
+      `https://api.thecatapi.com/v1/favourites/${favouriteId}`,
+      config
+    );
+    res.status(201).json(response.data);
+  } catch (err) {
+    console.log(err);
+    res.status(501).json(err);
+  }
+});
+
+// Getting Favorite Images
+app.get("/api/getFavorite", async (req, res) => {
+  try {
+    const { sub_id } = req.query;
+    const options = {
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": process.env.THE_CAT_API,
+      },
+    };
+    const response = await axios(
+      `https://api.thecatapi.com/v1/favourites?limit=20&sub_id=${sub_id}&order=DESC`,
+      options
+    );
+    const getFavorite = response.data;
+    res.status(201).json(getFavorite);
+  } catch (err) {
+    console.log(err);
+    res.status(501).json("get-favorite-failed");
   }
 });
 
